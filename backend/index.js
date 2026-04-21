@@ -10,8 +10,6 @@ app.use(cors())
 app.use(express.json()) 
 app.use(express.static("dist"))
 
-let currentDate = new Date()
-
 app.get('/api/persons', (req, res) => {
   Person.find({}).then(persons => {
     res.json(persons)
@@ -19,9 +17,12 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.get('/info', (req, res) => {
-    res.send(`
-      <p>${currentDate}</p>
-      `)
+    Person.countDocuments({}).then(count => {
+      res.send(`
+        <p>Phonebook has info of ${count} people</p>
+        <p>${new Date()}</p>
+        `)
+    })
 })
 
 app.get('/api/persons/:id', (req, res) => {
