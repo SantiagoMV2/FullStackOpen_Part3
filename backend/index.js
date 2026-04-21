@@ -6,17 +6,6 @@ const mongoose = require('mongoose')
 const app = express()
 const Person = require('./models/person')
 
-const url = process.env.MONGODB_URI
-
-mongoose.set('strictQuery', false)
-mongoose.connect(url)
-  .then(() => {
-    console.log('connected to MongoDB')
-  })
-  .catch(error => {
-    console.log('error connecting to MongoDB:', error.message)
-  })
-
 app.use(cors())
 app.use(express.json()) 
 app.use(express.static("dist"))
