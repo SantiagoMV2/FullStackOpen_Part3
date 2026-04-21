@@ -20,7 +20,6 @@ app.get('/api/persons', (req, res) => {
 
 app.get('/info', (req, res) => {
     res.send(`
-      <p>Phonebook has info of ${persons.length} people</p>
       <p>${currentDate}</p>
       `)
 })
