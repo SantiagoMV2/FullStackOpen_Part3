@@ -6,6 +6,18 @@ const mongoose = require('mongoose')
 const app = express()
 const Person = require('./models/person')
 
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message);
+
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id'})
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message })
+  }
+
+  next(error)
+}
+
 app.use(cors())
 app.use(express.json()) 
 app.use(express.static("dist"))
@@ -25,7 +37,7 @@ app.get('/info', (req, res) => {
     })
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
     Person.findById(req.params.id)
     .then(person => {
       if (person) {
@@ -34,33 +46,47 @@ app.get('/api/persons/:id', (req, res) => {
         res.status(404).end()
       }
     })
-    .catch(error => res.status(400).send({ error: 'malformatted id'}))
+    .catch(error => next(error))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body
-
-    if (!body.name || !body.number) {
-      return res.status(400).json({
-        error: 'name or number missing'
-      })
-    }
 
     const person = new Person({
         name: body.name,
         number: body.number
     })
 
-    person.save().then(savedPerson => {
+    person.save()
+    .then(savedPerson => {
       res.json(savedPerson)
     })
+    .catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.put('/api/persons/:id', (req, res, next) => {
+  const {number} = req.body
+
+  Person.findByIdAndUpdate(
+    req.params.id,
+    {number},
+    { new: true, runValidators: true, context: 'query'})
+  .then(updatedPerson => {
+    if (updatedPerson) {
+      res.json(updatedPerson)
+    } else { 
+      res.status(404).end()
+    }
+  })
+  .catch(error => next(error))
+})
+
+app.delete('/api/persons/:id', (req, res, next) => {
     Person.findByIdAndDelete(req.params.id)
     .then(() => {
       res.status(204).end()
     })
+    .catch(error => next(error))
 })
 
 const unknownEndpoint = (req, res) => {
@@ -68,6 +94,7 @@ const unknownEndpoint = (req, res) => {
 }
 
 app.use(unknownEndpoint)
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3002
 app.listen(PORT, () => {
